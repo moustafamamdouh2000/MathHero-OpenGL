@@ -6,10 +6,12 @@
 #include <stdlib.h>
 #include<GL/glut.h>
 #include <stdio.h>
-#include <string>
+#include<string>
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include<list>
+#include <iterator>
 using namespace std;
 int PhyWidth = 700, PhyHeight = 700;
 int logWidth = 100, logHeight = 100;
@@ -17,10 +19,14 @@ int centerX = logWidth/2, centerY = logHeight/2;
 int sqWidth=10;
 int squareX=centerX,squareY=centerY;
 int mouseX,mouseY;
+bool negFlag=false;
+int keyCounter=0;
+
+
 
 // Input and answer from the user
 stringstream input;
-int answer;
+int userAnswer;
 
 class square{
 public:
@@ -29,7 +35,8 @@ public:
     float red,green,blue;
     int alphaX,alphaY;
     char equation[10];
-    bool answer=false;
+    int answer;
+    bool isAnswered=false;
     square(char * eq,int w,int h,float r,float g,float b,int cx,int cy){
         width=w;
         height=h;
@@ -40,11 +47,13 @@ public:
         centerX=cx;
         centerY=cy;
     }
+    square(){};
     bool checkRange(int x, int y){// check if point given is within the square
         return x >= centerX-width/2 && x <= centerX+width/2 && y >= centerY-height/2 && y <= centerY+height/2;
     }
 };
 
+list <square> problems;
 void printSome(char *str,int x,int y) {
     glRasterPos2d(x,y);
     for (int i=0;i<strlen(str);i++)
@@ -60,6 +69,7 @@ void equationGen()
     int num1,num2;
     char operator_;
     char op[3]={'-','+','x'};//lets keep the / for now
+    char eq[10];
     for (int i=0;i<50;i++){
         operator_=op[rand()%3];
         num1=rand()%50;
@@ -68,6 +78,7 @@ void equationGen()
         {
             num1=rand()%20;
             num2=rand()%20;
+
         }
         switch(operator_)
         {
@@ -75,8 +86,18 @@ void equationGen()
             case '+':answerArr[i]=num1+num2;break;
             case 'x':answerArr[i]=num1*num2;break;
         }
-        printf("%d %c %d = %d\n",num1,operator_,num2,answerArr[i]);
+        sprintf(eq,"%d %c %d",num1,operator_,num2);
+        printf("%s\n",eq);
+        string myEq = eq;
+        square problem=square();
+        //problem.equation=eq       //apparently this is wrong cause you can't assign to arrays -- they're not modifiable       oh god don't I love c
+        strcpy(problem.equation, myEq.c_str());
+        problem.answer=answerArr[i];
+        printf("%s\n",problem.equation);
+        printf("%d\n",problem.answer);
+        problems.push_back(problem);
     }
+    printf("%d\n",problems.size());
 }
 
 
@@ -97,12 +118,33 @@ void highScores(){
 }
 
 
+
+
 void keyboard(unsigned char key,int x,int y){
-    input<<key;
+    if((key>='0'&& key<='9') || key=='-'){
+        if(key=='-'&&!negFlag&&keyCounter==0){
+            input<<key;
+            negFlag=true;
+            keyCounter++;
+
+
+        }
+        else if (key>='0'&& key<='9'){
+          input<<key;
+          keyCounter++;
+        }
+    }
     if(key == (char) 13)
     {
-        input>>answer;
+        userAnswer=stoi(input.str());
+        //string s=input.str();
+        // input.clear();
         input.str("");//clear buffer
+        negFlag=false;
+        keyCounter=0;
+        //cout<<s<<endl;
+        printf("%d\n",userAnswer);
+        //userAnswer=0;
     }
 }
 
@@ -151,8 +193,11 @@ int main( int argc, char ** argv){
     glutMouseFunc(mouseClick);
     glutPassiveMotionFunc(passiveMouse);
     glutKeyboardFunc(keyboard);
-    highScores();
-    // equationGen();
+    //highScores();
+    equationGen();
     // timer1(0);
     glutMainLoop();
 }
+
+// list <square>::iterator it = problems.begin();
+// advance(it,49);
