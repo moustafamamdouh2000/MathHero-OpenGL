@@ -20,13 +20,11 @@ int sqWidth=10;
 int squareX=centerX,squareY=centerY;
 int mouseX,mouseY;
 bool negFlag=false;
-int keyCounter=0;
-
-
-
-// Input and answer from the user
-stringstream input;
-int userAnswer;
+int keyCounter=0;       //to make sure the user can only input a negative sign in the first of his answer
+int score=0;
+stringstream input;     // Input and answer from the user
+int userAnswer;     // to store the user answer and check if it was valid
+int disCount=0;       // to know which problems are shown
 
 class square{
 public:
@@ -37,6 +35,7 @@ public:
     char equation[10];
     int answer;
     bool isAnswered=false;
+    bool isDisplayed=false;
     square(char * eq,int w,int h,float r,float g,float b,int cx,int cy){
         width=w;
         height=h;
@@ -59,6 +58,19 @@ void printSome(char *str,int x,int y) {
     for (int i=0;i<strlen(str);i++)
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12,str[i]);
     glFlush();
+}
+
+void checkAnswer(){
+    for (int i=0;i<3;i++){
+        list <square>::iterator it = problems.begin();
+        advance(it,i+disCount);
+        if(userAnswer==it->answer&&!it->isAnswered){ 
+            score++;
+            it->isAnswered=true;
+            printf("Answer %d is correct for problem no. %d your score is %d\n",userAnswer,i+disCount+1,score);
+        }
+    }
+    
 }
 
 
@@ -87,17 +99,17 @@ void equationGen()
             case 'x':answerArr[i]=num1*num2;break;
         }
         sprintf(eq,"%d %c %d",num1,operator_,num2);
-        printf("%s\n",eq);
+        //printf("%s\n",eq);
         string myEq = eq;
         square problem=square();
         //problem.equation=eq       //apparently this is wrong cause you can't assign to arrays -- they're not modifiable       oh god don't I love c
         strcpy(problem.equation, myEq.c_str());
         problem.answer=answerArr[i];
-        printf("%s\n",problem.equation);
+        //printf("%s\n",problem.equation);
         printf("%d\n",problem.answer);
         problems.push_back(problem);
     }
-    printf("%d\n",problems.size());
+    //printf("%d\n",problems.size());
 }
 
 
@@ -144,6 +156,7 @@ void keyboard(unsigned char key,int x,int y){
         keyCounter=0;
         //cout<<s<<endl;
         printf("%d\n",userAnswer);
+        checkAnswer();
         //userAnswer=0;
     }
 }
@@ -166,8 +179,10 @@ void passiveMouse(int x,int y){
 
 
 void timer1( int value ){
-    glutTimerFunc(100, timer1, value);
+    glutTimerFunc(3000, timer1, value);
     glutPostRedisplay();
+    disCount++;
+    printf("%d\n",disCount);
 }
 
 void init(float Red,float Blue,float Green,float Alpha){
@@ -195,9 +210,7 @@ int main( int argc, char ** argv){
     glutKeyboardFunc(keyboard);
     //highScores();
     equationGen();
-    // timer1(0);
+    timer1(0);
     glutMainLoop();
 }
 
-// list <square>::iterator it = problems.begin();
-// advance(it,49);
