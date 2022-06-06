@@ -26,7 +26,7 @@ int keyCounter=0;       //to make sure the user can only input a negative sign i
 int score=0;
 stringstream input;     // Input and answer from the user
 int userAnswer;     // to store the user answer and check if it was valid
-int disCount=-1;       // to know which problems are shown
+int disCount=-4;       // to know which problems are shown
 
 class square{
 public:
@@ -38,7 +38,6 @@ public:
     char equation[10];
     int answer;
     bool isAnswered=false;
-    bool isDisplayed=false;
     square(char * eq,int w,int h,float r,float g,float b,int cx,int cy){
         width=w;
         height=h;
@@ -70,7 +69,7 @@ list <powerUpBird> birds;
 list <square> problems;
 
 void checkAnswer(){
-    for (int i=0;i<3;i++){
+    for (int i=0;i<4;i++){
         list <square>::iterator it = problems.begin();
         advance(it,i+disCount);
         if(userAnswer==it->answer&&!it->isAnswered){ 
@@ -93,11 +92,10 @@ void birdsGen(){ // needs further modefying to inssure that t2 is bigger than t1
     while(true){
         t2=rand()%40;
         if(t2<(t1+15));
-            printf("if invoked\n");
             t2+=15;
             break;
         }
-        printf("%d\t%d",t1,t2);
+        //printf("%d\t%d",t1,t2);
         powerUpBird bird1 = powerUpBird(t1);
         powerUpBird bird2 = powerUpBird(t2);
         birds.push_back(t1);
@@ -111,7 +109,6 @@ void equationGen()
     char operator_;
     char op[3]={'-','+','x'};//lets keep the / for now
     char eq[10];
-    //list <square>::iterator it = problems.begin();
     for (int i=0;i<50;i++){
         operator_=op[rand()%3];
         num1=rand()%50;
@@ -129,17 +126,13 @@ void equationGen()
             case 'x':answerArr[i]=num1*num2;break;
         }
         sprintf(eq,"%d %c %d",num1,operator_,num2);
-        //printf("%s\n",eq);
         string myEq = eq;
         square problem=square();
         //problem.equation=eq       //apparently this is wrong cause you can't assign to arrays -- they're not modifiable       oh god don't I love c
         strcpy(problem.equation, myEq.c_str());
         problem.answer=answerArr[i];
-        //printf("%s\n",problem.equation);
-        //printf("%d\n",problem.answer);
+        problem.alphaY=-(logHeight/4)*i;
         problems.push_back(problem);
-        //advance(it,i);
-        //printf("yooooooooooooooooo %d %s\n",i,it->equation);
     }
 }
 
@@ -158,22 +151,25 @@ void printSome(char *str,int x,int y) {
     glFlush();
 }
 void drawBoxes(){
-    list <square>::iterator it = problems.begin();
-    advance(it,disCount);
-    if(!it->isAnswered) glColor3f(1.0, 1.0, 1.0);
-    else glColor3f(0.0,1.0,0.0);
-    //printf("yoloooooo  %d\t%d\n",it->centerX,it->centerY);
-    //printf("yoloooooozzzz  %d\t%d\n",it->alphaX,it->alphaY);
-    glBegin(GL_QUADS);
-    glVertex2i(centerX-sqWidth,centerY+sqHeight+it->alphaY);
-    glVertex2i(centerX+sqWidth,centerY+sqHeight+it->alphaY);
-    glVertex2i(centerX+sqWidth,centerY-sqHeight+it->alphaY);
-    glVertex2i(centerX-sqWidth,centerY-sqHeight+it->alphaY);
-    glEnd();
-    glColor3f(0.0, 0.0, 0.0);
-    //printf("equation: %s\n",it->equation);
-    //printf("drawboxes %d\t%s\n", disCount,it->equation);
-    printSome(it->equation,centerX-sqWidth+2,centerY+it->alphaY);
+    for(int i=0;i<50;i++){
+
+        list <square>::iterator it = problems.begin();
+        advance(it,i);
+        if(!it->isAnswered) glColor3f(1.0, 1.0, 1.0);
+        else glColor3f(0.0,1.0,0.0);
+        //printf("yoloooooo  %d\t%d\n",it->centerX,it->centerY);
+        //printf("yoloooooozzzz  %d\t%d\n",it->alphaX,it->alphaY);
+        glBegin(GL_QUADS);
+        glVertex2i(centerX-sqWidth,centerY+sqHeight+it->alphaY);
+        glVertex2i(centerX+sqWidth,centerY+sqHeight+it->alphaY);
+        glVertex2i(centerX+sqWidth,centerY-sqHeight+it->alphaY);
+        glVertex2i(centerX-sqWidth,centerY-sqHeight+it->alphaY);
+        glEnd();
+        glColor3f(0.0, 0.0, 0.0);
+        printSome(it->equation,centerX-sqWidth+2,centerY+it->alphaY);
+
+
+    }
 
 }
 
@@ -193,6 +189,16 @@ void highScores(){
     scores.close();
 }
 
+
+void incr (){
+    for (int i=0;i<50;i++){
+        list <square>::iterator it = problems.begin();
+        advance(it,i);
+        
+        it->alphaY+=(logHeight/50);
+
+    }
+}
 
 void keyboard(unsigned char key,int x,int y){
     if((key>='0'&& key<='9') || key=='-'){
@@ -240,19 +246,13 @@ void passiveMouse(int x,int y){
 }
 
 void checkAnswerTimer( int value ){
-    glutTimerFunc(3000, checkAnswerTimer, value);
-    glutPostRedisplay();
-    disCount++;
-    //printf("timer1 %d\n",disCount);
+    glutTimerFunc(2500, checkAnswerTimer, value);
+        disCount++;
 }
 
 void displayTimer(int value){
-    glutTimerFunc(120, displayTimer, value);
-    glutPostRedisplay();
-    list <square>::iterator it = problems.begin();
-    advance(it,disCount);
-    it->alphaY+=(logHeight/25);
-    //printf("timer2 %d\n",disCount);
+    glutTimerFunc(200, displayTimer, value);
+    incr();
     glutPostRedisplay();
     
 
@@ -269,6 +269,10 @@ void Display(){
     glClear( GL_COLOR_BUFFER_BIT );
     drawVerticalLine();
     drawBoxes();
+    char buff[10];
+    sprintf(buff,"%d",score);
+    glColor3f(1.0, 1.0, 1.0);
+    printSome(buff,5,10);
     glFlush();
     glutSwapBuffers();
 }
@@ -285,10 +289,11 @@ int main( int argc, char ** argv){
     glutPassiveMotionFunc(passiveMouse);
     glutKeyboardFunc(keyboard);
     //highScores();
+    birdsGen();
     equationGen();
+    Sleep(100);
     checkAnswerTimer(0);
     displayTimer(0);
-    birdsGen();
     glutMainLoop();
 }
 
