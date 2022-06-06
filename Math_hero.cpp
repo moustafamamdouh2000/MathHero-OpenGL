@@ -17,8 +17,8 @@ using namespace std;
 int PhyWidth = 700, PhyHeight = 700;
 int logWidth = 100, logHeight = 100;
 int centerX = logWidth/2, centerY =-3;
-int sqWidth=12;
-int sqHeight=8;
+int sqWidth=10;
+int sqHeight=6;
 int squareX=centerX,squareY=centerY;
 int mouseX,mouseY;
 bool negFlag=false;
@@ -34,7 +34,7 @@ public:
     int centerY=-3;
     int width=10,height=6;
     float red,green,blue;
-    int alphaX,alphaY;
+    int alphaX=0,alphaY=0;
     char equation[10];
     int answer;
     bool isAnswered=false;
@@ -111,6 +111,7 @@ void equationGen()
     char operator_;
     char op[3]={'-','+','x'};//lets keep the / for now
     char eq[10];
+    //list <square>::iterator it = problems.begin();
     for (int i=0;i<50;i++){
         operator_=op[rand()%3];
         num1=rand()%50;
@@ -135,12 +136,11 @@ void equationGen()
         strcpy(problem.equation, myEq.c_str());
         problem.answer=answerArr[i];
         //printf("%s\n",problem.equation);
-        printf("%d\n",problem.answer);
+        //printf("%d\n",problem.answer);
         problems.push_back(problem);
+        //advance(it,i);
+        //printf("yooooooooooooooooo %d %s\n",i,it->equation);
     }
-    list <square>::iterator it = problems.begin();
-    advance(it,disCount);
-    printf("yooooooooooooooooo %s\n",it->equation);
 }
 
 void drawVerticalLine(){
@@ -161,7 +161,8 @@ void drawBoxes(){
     list <square>::iterator it = problems.begin();
     advance(it,disCount);
     glColor3f(1.0, 1.0, 1.0);
-    //printf("%d\t%d\n",it->centerX,it->centerY);
+    //printf("yoloooooo  %d\t%d\n",it->centerX,it->centerY);
+    //printf("yoloooooozzzz  %d\t%d\n",it->alphaX,it->alphaY);
     glBegin(GL_QUADS);
     glVertex2i(centerX-sqWidth,centerY+sqHeight+it->alphaY);
     glVertex2i(centerX+sqWidth,centerY+sqHeight+it->alphaY);
@@ -169,6 +170,8 @@ void drawBoxes(){
     glVertex2i(centerX-sqWidth,centerY-sqHeight+it->alphaY);
     glEnd();
     glColor3f(0.0, 0.0, 0.0);
+    //printf("equation: %s\n",it->equation);
+    printf("drawboxes %d\t%s\n", disCount,it->equation);
     printSome(it->equation,centerX-sqWidth+2,centerY+it->alphaY);
 
 }
@@ -239,7 +242,7 @@ void checkAnswerTimer( int value ){
     glutTimerFunc(3000, checkAnswerTimer, value);
     glutPostRedisplay();
     disCount++;
-    printf("%d lmao \n",disCount);
+    printf("timer1 %d\n",disCount);
 }
 
 void displayTimer(int value){
@@ -248,6 +251,7 @@ void displayTimer(int value){
     list <square>::iterator it = problems.begin();
     advance(it,disCount);
     it->alphaY+=(logHeight/25);
+    printf("timer2 %d\n",disCount);
     glutPostRedisplay();
     
 
@@ -280,7 +284,7 @@ int main( int argc, char ** argv){
     glutPassiveMotionFunc(passiveMouse);
     glutKeyboardFunc(keyboard);
     //highScores();
-    //equationGen();
+    equationGen();
     checkAnswerTimer(0);
     displayTimer(0);
     birdsGen();
