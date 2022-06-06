@@ -13,6 +13,8 @@
 #include<list>
 #include <iterator>
 #include<time.h>
+#include <unistd.h>
+#include <bits/stdc++.h>
 using namespace std;
 int PhyWidth = 700, PhyHeight = 700;
 int logWidth = 100, logHeight = 100;
@@ -26,6 +28,9 @@ stringstream input;     // Input and answer from the user
 int userAnswer;     // to store the user answer and check if it was valid
 int disCount=-4;       // to know which problems are shown
 int flag=0;         //menu 0 , play 1
+int gameTimer=0;
+bool birdShown=false;
+int birdTime=0;
 void printSome(const char *str,int x,int y) {
     glRasterPos2d(x,y);
     for (int i=0;i<strlen(str);i++)
@@ -58,10 +63,6 @@ public:
         cY=cy;
     }
     square (){}
-    int returnWid()
-    {
-        return width;
-    }
     void drawSquare(int offset)
     {
         glBegin(GL_QUADS);
@@ -76,10 +77,10 @@ public:
     void drawSquare()
     {
         glBegin(GL_QUADS);
-        glVertex2d(cX-(width/2),cY-(height/2));
-        glVertex2d(cX+(width/2),cY-(height/2));
-        glVertex2d(cX+(width/2),cY+(height/2));
-        glVertex2d(cX-(width/2),cY+(height/2));
+        glVertex2d(cX-(width/2)+alphaX,cY-(height/2)+alphaY);
+        glVertex2d(cX+(width/2)+alphaX,cY-(height/2)+alphaY);
+        glVertex2d(cX+(width/2)+alphaX,cY+(height/2)+alphaY);
+        glVertex2d(cX-(width/2)+alphaX,cY+(height/2)+alphaY);
         glEnd();
         glColor3f(0,0,0);
     }
@@ -104,11 +105,15 @@ public:
     bool checkRange(int x, int y){// check if point given is within the square
         return x >= cX-width/2 && x <= cX+width/2 && y >= cY-height/2 && y <= cY+height/2;
     }
+    bool checkRange1(int x, int y){// check if point given is within the square
+        return x >= cX-width/2+alphaX && x <= cX+width/2+alphaX && y >= cY-height/2 && y <= cY+height/2;
+    }
 };
 square play=square("Play",20,15,centerX,centerY+25);
-square hs=square("High Scores",20,15,centerX,centerY);
-square ex=square("Exit",20,15,centerX,centerY-25);
+square hsBttn=square("High Scores",20,15,centerX,centerY);
+square exBttn=square("Exit",20,15,centerX,centerY-25);
 square background=square(logWidth,logHeight,centerX,centerY);
+square birdBox=square(4,4,0,85);
 class powerUpBird{
     public:
         int time;       //the time the power up bird should appear
@@ -133,13 +138,48 @@ void checkAnswer(){
         }
     }
 }
+void incr (){
+    for (int i=0;i<50;i++){
+        list <square>::iterator it = problems.begin();
+        advance(it,i);
+        it->alphaY+=(logHeight/50);
 
+    }
+}
+void checkAnswerTimer( int value ){
+    if(value && flag == 1)
+    {
+        glutTimerFunc(2500, checkAnswerTimer, value);
+        disCount++;
+    }
+    else
+    {
+        return ;
+    }
+}
+
+void displayTimer(int value){
+    if(flag == 1)
+    {
+        glutTimerFunc(200, displayTimer, value);
+        incr();
+        glutPostRedisplay();
+        if(birdShown) {
+            list <powerUpBird>::iterator it = birds.begin();
+            it->cx+=3;
+        }
+    }
+    else
+    {
+        return ;//do nothing
+    }
+}
 void birdsGen(){ // needs further modefying to inssure that t2 is bigger than t1 at leaset by 15 seconds
                  // and both of them are in the 60 seonds time period
                  // so for the time being let us just work with 1 bird instead of two by only using the first
                  // powerUpBird object in the birds list
     srand(time(0));
-    int t1,t2;   
+    int t1,t2;
     t1=rand()%40;
 
     while(true){
@@ -148,16 +188,17 @@ void birdsGen(){ // needs further modefying to inssure that t2 is bigger than t1
             t2+=15;
             break;
         }
-        //printf("%d\t%d",t1,t2);
-        powerUpBird bird1 = powerUpBird(t1);
+        printf("%d\t%d\n",t1,t2);
+        powerUpBird bird1 = powerUpBird(5);
         powerUpBird bird2 = powerUpBird(t2);
-        birds.push_back(t1);
-        birds.push_back(t2);   
+        bird1.cx=0;
+        birds.push_back(bird1);
+        birds.push_back(bird2);
 }
 void equationGen()
 {
     //Need to add the generated equation to the squares
-    int answerArr[50];
+    int probAnswer;
     int num1,num2;
     char operator_;
     char op[3]={'-','+','x'};//lets keep the / for now
@@ -174,16 +215,16 @@ void equationGen()
         }
         switch(operator_)
         {
-            case '-':answerArr[i]=num1-num2;break;
-            case '+':answerArr[i]=num1+num2;break;
-            case 'x':answerArr[i]=num1*num2;break;
+            case '-':probAnswer=num1-num2;break;
+            case '+':probAnswer=num1+num2;break;
+            case 'x':probAnswer=num1*num2;break;
         }
         sprintf(eq,"%d %c %d",num1,operator_,num2);
         string myEq = eq;
-        square problem=square(10,6,50,-3);
+        square problem=square(10,6,50,-3);//problem boxes
         //problem.equation=eq       //apparently this is wrong cause you can't assign to arrays -- they're not modifiable       oh god don't I love c
         strcpy(problem.equation, myEq.c_str());
-        problem.answer=answerArr[i];
+        problem.answer=probAnswer;
         problem.alphaY=-(logHeight/4)*i;
         problems.push_back(problem);
     }
@@ -213,24 +254,100 @@ void drawBoxes(){
         printSome(it->equation,it->cX-it->width+5,it->cY+it->alphaY);
     }
 }
-
-
-void highScores(){//gets triggered after 60 seconds
+void powerUpTimer(int value){
+    if(flag == 1)
+    {
+        printf("%d\n",gameTimer);
+        gameTimer++;
+        glutTimerFunc(1000, powerUpTimer, value);
+        list <powerUpBird>::iterator it = birds.begin();
+        advance(it,0);
+        if(gameTimer>=(it->time)){
+            birdShown=true;
+            glutPostRedisplay();
+        }
+    }
+    else
+    {
+        return ;//do nothing
+    }
+}
+void results()
+{
+    glColor3f(0,0,0);//background
+    background.drawSquare();
+    char str[2];
+    glColor3f(1,1,1);
+    sprintf(str,"%d",score);
+    printSome("Your Score is: ",centerX-15,centerY+10);
+    printSome(str,centerX+5,centerY+10);
+    printSome("Your rank is ",centerX+5,centerY-10);
+}
+void highScores(){
     int s[10];
-    string line;
+    char line[10];
+    int highscores[5];
+    string str;
     int i=0;
+    glColor3f(0,0,0);
+    background.drawSquare();
+    glColor3f(1,1,1);
     ifstream scores("scores.txt");
     if(scores.is_open()){
-        while (getline(scores,line)){
+        while (getline(scores,str)){
+            highscores[i]=stoi(str);
+            // strcpy(line[i],str.c_str());
+            // printSome(line[i],centerX,centerY+10-i*10);
+            i++;
+            if(i==5)
+                break;
         }
         scores.close();
     }
     else
-        cout<<"error to open";
-    //write to scores files after sorting the arary
+    cout<<"error to open";
     scores.close();
+    sort(highscores,highscores + sizeof(highscores)/sizeof(highscores[0]),greater<int>());
+    for(int i=0;i<5;i++)
+    {
+        sprintf(line,"%d.%d",i+1,highscores[i]);
+        printSome(line,centerX-10,centerY+25-i*10);
+    }
 }
 char ans[10];
+void reset()
+{
+    flag=0;
+    Sleep(2500);
+    mouseX=0;
+    mouseY=0;
+    gameTimer=0;
+    score=0;
+    birdShown=false;
+    birdTime=0;
+    birdBox.alphaX=0;
+    birds.clear();
+    birdsGen();
+    problems.clear();
+    equationGen();
+    disCount=-4;
+    memset(ans,0,255);
+}
+void specialKeyboard(int key,int x,int y)
+{
+    if(key == GLUT_KEY_F1 && flag == 1 )//reset game
+    {
+        reset();
+        flag=1;
+        glutPostRedisplay();
+    }
+    else if (key == GLUT_KEY_F2 && (flag == 1 || flag == 2 || flag ==3))//menu
+    {
+        flag=0;
+        glutPostRedisplay();
+        // Sleep(2500);
+    }
+}
 void keyboard(unsigned char key,int x,int y){
     if(!(key ==(char) 127 || key ==(char) 13 || (key >='0' && key<='9') || key=='-') || (key ==(char) 13 && input.rdbuf()->in_avail() == 0) )//not valid input
     {
@@ -246,7 +363,7 @@ void keyboard(unsigned char key,int x,int y){
         }
         ans[keyCounter]=key;
         if(((key>='0'&& key<='9') || key=='-')){
-            if(key=='-'&&!negFlag&&keyCounter==0){ 
+            if(key=='-'&&!negFlag&&keyCounter==0){
                 input<<key;
                 negFlag=true;
                 keyCounter++;
@@ -268,53 +385,35 @@ void keyboard(unsigned char key,int x,int y){
         }
     }
 }
-void incr (){
-    for (int i=0;i<50;i++){
-        list <square>::iterator it = problems.begin();
-        advance(it,i);
-        it->alphaY+=(logHeight/50);
 
-    }
-}
-void checkAnswerTimer( int value ){
-    if(value)
-    {
-        glutTimerFunc(2500, checkAnswerTimer, value);
-        disCount++;
-    }
-    else
-    {
-        return ;
-    }
-}
 
-void displayTimer(int value){
-    if(value)
-    {
-        glutTimerFunc(200, displayTimer, value);
-        incr();
-        glutPostRedisplay();
-    }
-    else
-    {
-        return ;//do nothing
-    }
-}
 void mouseClick(int btn, int state, int x, int y){
+    mouseX = x;
+    mouseX=0.5+1.0*mouseX*logWidth/PhyWidth;
+    mouseY = PhyHeight - y;
+    mouseY=0.5+1.0*mouseY*logHeight/PhyHeight;
     if((btn==GLUT_LEFT_BUTTON && state==GLUT_UP) && flag == 0)
     {
-        mouseX = x;
-        mouseX=0.5+1.0*mouseX*logWidth/PhyWidth;
-        mouseY = PhyHeight - y;
-        mouseY=0.5+1.0*mouseY*logHeight/PhyHeight;
         if(play.checkRange(mouseX,mouseY))
         {
             flag=1;
             checkAnswerTimer(1);
             displayTimer(1);
+            powerUpTimer(1);
         }
-        if (hs.checkRange(mouseX,mouseY)) printf("HIGHSCORE");
-        if (ex.checkRange(mouseX,mouseY)) exit(0);
+        if (hsBttn.checkRange(mouseX,mouseY)) flag=2;
+        if (exBttn.checkRange(mouseX,mouseY)) exit(0);
+    }
+    if(btn==GLUT_LEFT_BUTTON && state==GLUT_DOWN)
+    {
+        if(birdBox.checkRange1(mouseX,mouseY) && birdShown)
+        {
+            printf("CLICKED");
+            gameTimer-=15;
+            // birdTime=15;
+            birdShown=false;
+            birdBox.alphaX=0;
+        }
     }
     glutPostRedisplay();
 }
@@ -324,8 +423,9 @@ void passiveMouse(int x,int y){
     mouseX=0.5+1.0*mouseX*logWidth/PhyWidth;
     mouseY = PhyHeight - y;
     mouseY=0.5+1.0*mouseY*logHeight/PhyHeight;
-    if(play.checkRange(mouseX,mouseY) && flag==0)// dead for now
+    if(birdBox.checkRange(mouseX,mouseY))// dead for now
     {
+        printf("SCREAM");
         //glColor3f(1,1,1);
     }
 }
@@ -350,16 +450,42 @@ void playGame()
     printSome(sc,logWidth/10,logHeight/10);
     printSome("Answer: ",logWidth-0.9*logWidth,logHeight-10);
     printSome(ans,logWidth-0.9*logWidth + 10,logHeight-10);
+    printSome("Time Left:",logWidth-20,logHeight-5);
+    char buf[10];
+    sprintf(buf,"%d",60-gameTimer);
+    printSome(buf,logWidth-5,logHeight-5);
+    list<powerUpBird>::iterator it = birds.begin();
+    advance(it,0);
+    if(birdShown){
+        printf("the bird is on the screen\t%d\n",it->cx);
+        glColor3f(1,0,0);
+        birdBox.drawSquare();
+        birdBox.alphaX+=4;
+        glEnd();
+    }
+    if(gameTimer > 60 + birdTime)
+    {
+        reset();
+        flag=3;
+        glutPostRedisplay();
+    }
 }
 
 void menu()//gets triggered with setup in the background
 {
+    char F1[30]="Press F1 to restart the game";
+    char F2[35]="Press F2 to get back to the menu";
+    printSome(F1,0.01*logWidth,0.95*logHeight);
+    printSome(F2,0.01*logWidth,0.9*logHeight);
+    glColor3f(1,1,0);
+    char str[10]="Ma+h Her0";
+    printSome(str,centerX-7,logHeight-5);
     glColor3f(1,1,1);
     play.drawSquare(3);
     glColor3f(1,1,1);
-    hs.drawSquare(7);
+    hsBttn.drawSquare(7);
     glColor3f(1,1,1);
-    ex.drawSquare(5);
+    exBttn.drawSquare(5);
 }
 
 void Display(){
@@ -368,6 +494,8 @@ void Display(){
     {
         case 0:menu();break;
         case 1:playGame();break;
+        case 2:highScores();break;
+        case 3:results();break;
     }
     // drawVerticalLine();// in play function
     // drawBoxes();
@@ -391,10 +519,8 @@ int main( int argc, char ** argv){
     glutMouseFunc(mouseClick);
     glutPassiveMotionFunc(passiveMouse);
     glutKeyboardFunc(keyboard);
-    //highScores();
+    glutSpecialFunc(specialKeyboard);
     memset(ans,0,255);
-    // checkAnswerTimer(0);
-    // displayTimer(0);
     birdsGen();
     equationGen();
     glutMainLoop();
