@@ -26,7 +26,7 @@ int keyCounter=0;       //to make sure the user can only input a negative sign i
 int score=0;
 stringstream input;     // Input and answer from the user
 int userAnswer;     // to store the user answer and check if it was valid
-int disCount=0;       // to know which problems are shown
+int disCount=-1;       // to know which problems are shown
 
 class square{
 public:
@@ -160,7 +160,8 @@ void printSome(char *str,int x,int y) {
 void drawBoxes(){
     list <square>::iterator it = problems.begin();
     advance(it,disCount);
-    glColor3f(1.0, 1.0, 1.0);
+    if(!it->isAnswered) glColor3f(1.0, 1.0, 1.0);
+    else glColor3f(0.0,1.0,0.0);
     //printf("yoloooooo  %d\t%d\n",it->centerX,it->centerY);
     //printf("yoloooooozzzz  %d\t%d\n",it->alphaX,it->alphaY);
     glBegin(GL_QUADS);
@@ -171,7 +172,7 @@ void drawBoxes(){
     glEnd();
     glColor3f(0.0, 0.0, 0.0);
     //printf("equation: %s\n",it->equation);
-    printf("drawboxes %d\t%s\n", disCount,it->equation);
+    //printf("drawboxes %d\t%s\n", disCount,it->equation);
     printSome(it->equation,centerX-sqWidth+2,centerY+it->alphaY);
 
 }
@@ -242,7 +243,7 @@ void checkAnswerTimer( int value ){
     glutTimerFunc(3000, checkAnswerTimer, value);
     glutPostRedisplay();
     disCount++;
-    printf("timer1 %d\n",disCount);
+    //printf("timer1 %d\n",disCount);
 }
 
 void displayTimer(int value){
@@ -251,7 +252,7 @@ void displayTimer(int value){
     list <square>::iterator it = problems.begin();
     advance(it,disCount);
     it->alphaY+=(logHeight/25);
-    printf("timer2 %d\n",disCount);
+    //printf("timer2 %d\n",disCount);
     glutPostRedisplay();
     
 
