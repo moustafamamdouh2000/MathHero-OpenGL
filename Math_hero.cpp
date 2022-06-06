@@ -18,7 +18,7 @@ int PhyWidth = 700, PhyHeight = 700;
 int logWidth = 100, logHeight = 100;
 int centerX = logWidth/2, centerY =logHeight/2;//-sqHiehgt/2
 int squareX=centerX,squareY=centerY;
-int mouseX,mouseY;
+int mouseX=centerX,mouseY=centerY;
 bool negFlag=false;
 int keyCounter=0;       //to make sure the user can only input a negative sign in the first of his answer
 int score=0;
@@ -44,7 +44,6 @@ public:
     char equation[10];
     int answer;
     bool isAnswered=false;
-    bool isDisplayed=false;
     square(const char * eq,int w,int h,int cx,int cy){
         width=w;
         height=h;
@@ -74,15 +73,42 @@ public:
         glColor3f(0,0,0);
         printSome(equation,cX-offset,cY);
     }
+    void drawSquare()
+    {
+        glBegin(GL_QUADS);
+        glVertex2d(cX-(width/2),cY-(height/2));
+        glVertex2d(cX+(width/2),cY-(height/2));
+        glVertex2d(cX+(width/2),cY+(height/2));
+        glVertex2d(cX-(width/2),cY+(height/2));
+        glEnd();
+        glColor3f(0,0,0);
+    }
+    void drawSquare(int passiveX,int passiveY) // for the passive mouse looking asthetic
+    {
+        glColor3f(1,1,1);//white background
+        glBegin(GL_QUADS);
+        glVertex2d(cX-(width/2),cY-(height/2));
+        glVertex2d(cX+(width/2),cY-(height/2));
+        glVertex2d(cX+(width/2),cY+(height/2));
+        glVertex2d(cX-(width/2),cY+(height/2));
+        glEnd();
+        glBegin(GL_QUADS);//a bit darker
+        glVertex2d(cX-(width/2),cY-(height/2)+passiveY);
+        glVertex2d(cX+(width/2),cY-(height/2)+passiveY);
+        glVertex2d(cX+(width/2),cY+(height/2)+passiveY);
+        glVertex2d(cX-(width/2),cY+(height/2)+passiveY);
+        glEnd();
+        glColor3f(0,0,0);
+        printSome(equation,cX,cY);
+    }
     bool checkRange(int x, int y){// check if point given is within the square
-        return x >= cX-width/2 && x <= cX+width/2 && y >= cX-height/2 && y <= cY+height/2;
+        return x >= cX-width/2 && x <= cX+width/2 && y >= cY-height/2 && y <= cY+height/2;
     }
 };
 square play=square("Play",20,15,centerX,centerY+25);
 square hs=square("High Scores",20,15,centerX,centerY);
 square ex=square("Exit",20,15,centerX,centerY-25);
 square background=square(logWidth,logHeight,centerX,centerY);
-
 class powerUpBird{
     public:
         int time;       //the time the power up bird should appear
@@ -96,15 +122,6 @@ class powerUpBird{
 list <powerUpBird> birds;
 
 list <square> problems;
-    void lol1()
-    {
-        glColor3f(1,0,0);
-        glBegin(GL_LINE_LOOP);
-        glVertex2d(10,10);
-        glVertex2d(15,15);
-        glVertex2d(20,20);
-        glEnd();
-    }
 void checkAnswer(){
     for (int i=0;i<4;i++){
         list <square>::iterator it = problems.begin();
@@ -259,22 +276,6 @@ void incr (){
 
     }
 }
-void mouseClick(int btn, int state, int x, int y){
-    if(btn==GLUT_LEFT_BUTTON && state==GLUT_DOWN && flag == 0)
-    {
-        mouseX = x;
-        mouseX=0.5+1.0*mouseX*logWidth/PhyWidth;
-        mouseY = PhyHeight - y;
-        mouseY=0.5+1.0*mouseY*logHeight/PhyHeight;
-        squareX=mouseX;
-        squareY=mouseY;
-    }
-    glutPostRedisplay();
-}
-
-void passiveMouse(int x,int y){
-}
-
 void checkAnswerTimer( int value ){
     if(value)
     {
@@ -299,6 +300,36 @@ void displayTimer(int value){
         return ;//do nothing
     }
 }
+void mouseClick(int btn, int state, int x, int y){
+    if((btn==GLUT_LEFT_BUTTON && state==GLUT_UP) && flag == 0)
+    {
+        mouseX = x;
+        mouseX=0.5+1.0*mouseX*logWidth/PhyWidth;
+        mouseY = PhyHeight - y;
+        mouseY=0.5+1.0*mouseY*logHeight/PhyHeight;
+        if(play.checkRange(mouseX,mouseY))
+        {
+            flag=1;
+            checkAnswerTimer(1);
+            displayTimer(1);
+        }
+        if (hs.checkRange(mouseX,mouseY)) printf("HIGHSCORE");
+        if (ex.checkRange(mouseX,mouseY)) exit(0);
+    }
+    glutPostRedisplay();
+}
+
+void passiveMouse(int x,int y){
+    mouseX = x;
+    mouseX=0.5+1.0*mouseX*logWidth/PhyWidth;
+    mouseY = PhyHeight - y;
+    mouseY=0.5+1.0*mouseY*logHeight/PhyHeight;
+    if(play.checkRange(mouseX,mouseY) && flag==0)// dead for now
+    {
+        //glColor3f(1,1,1);
+    }
+}
+
 
 
 void init(float Red,float Blue,float Green,float Alpha){
@@ -324,17 +355,11 @@ void playGame()
 void menu()//gets triggered with setup in the background
 {
     glColor3f(1,1,1);
-    play.drawSquare(5);
+    play.drawSquare(3);
     glColor3f(1,1,1);
     hs.drawSquare(7);
     glColor3f(1,1,1);
     ex.drawSquare(5);
-    if(play.checkRange(mouseX,mouseY))
-    {
-        flag=1;
-        checkAnswerTimer(1);
-        displayTimer(1);
-    }
 }
 
 void Display(){
@@ -358,7 +383,7 @@ void Display(){
 int main( int argc, char ** argv){
     glutInit( &argc, argv);
     glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB);
-    glutInitWindowPosition( 150, 150);
+    glutInitWindowPosition( 500, 0);
     glutInitWindowSize(PhyWidth, PhyHeight);
     glutCreateWindow("Math Hero");
     init(0, 0, 0,1);
