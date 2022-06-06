@@ -40,9 +40,6 @@ void printSome(const char *str,int x,int y) {
 
 class square{
 public:
-    // int cX=(logWidth/2);
-    // int cY=-(height/2);
-    // int width=10,height=6;
     int cX,cY,width,height;
     float red,green,blue;
     int alphaX=0,alphaY=0;
@@ -117,7 +114,6 @@ square birdBox=square(4,4,0,85);
 class powerUpBird{
     public:
         int time;       //the time the power up bird should appear
-        int cx;        // the location of the bird on the screen
         bool isShown = false; // check if the bird is on the screen at the current time
         powerUpBird(int t){
             time=t;
@@ -166,7 +162,6 @@ void displayTimer(int value){
         glutPostRedisplay();
         if(birdShown) {
             list <powerUpBird>::iterator it = birds.begin();
-            it->cx+=3;
         }
     }
     else
@@ -189,11 +184,10 @@ void birdsGen(){ // needs further modefying to inssure that t2 is bigger than t1
             break;
         }
         printf("%d\t%d\n",t1,t2);
-        powerUpBird bird1 = powerUpBird(5);
-        powerUpBird bird2 = powerUpBird(t2);
-        bird1.cx=0;
+        powerUpBird bird1 = powerUpBird(t1);
+        // powerUpBird bird2 = powerUpBird(t2);
         birds.push_back(bird1);
-        birds.push_back(bird2);
+        // birds.push_back(bird2);
 }
 void equationGen()
 {
@@ -457,7 +451,7 @@ void playGame()
     list<powerUpBird>::iterator it = birds.begin();
     advance(it,0);
     if(birdShown){
-        printf("the bird is on the screen\t%d\n",it->cx);
+        printf("the bird is on the screen\n");
         glColor3f(1,0,0);
         birdBox.drawSquare();
         birdBox.alphaX+=4;
