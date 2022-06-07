@@ -34,6 +34,7 @@ bool birdShown=false;
 int birdTime=0;
 char ans[10];
 char sc[10];
+string cl;
 FILE *fp;
 //TODO : Fix file issue where restarting the game inside doesn't write the new score or display the ranking in the result menu, and creating file
 ifstream scores("scores.txt");
@@ -327,7 +328,7 @@ void highScores()
         sort(highscores,highscores+i-1,greater<int>());
         if(i>5)
             i=5;//5 results only
-        for(int j=0;j<i-1;j++)
+        for(int j=0;j<=i-1;j++)
         {
             sprintf(line,"%d.%d",j+1,highscores[j]);
             printSome(line,centerX-10,centerY+25-j*10);
@@ -400,6 +401,12 @@ void keyboard(unsigned char key,int x,int y){
         }
         if(key == (char) 13)
         {
+            cl=input.str();
+            if(!cl.compare("-"))
+            {
+                printf("Not valid input");
+                return ;
+            }
             userAnswer=stoi(input.str());
             input.str("");//clear buffer
             negFlag=false;
