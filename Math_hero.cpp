@@ -31,6 +31,8 @@ int flag=0;         //menu 0 , play 1
 int gameTimer=0;
 bool birdShown=false;
 int birdTime=0;
+//TODO : Fix file issue where restarting the game inside doesn't write the new score or display the ranking in the result menu, and creating file
+ifstream scores("scores.txt");
 void printSome(const char *str,int x,int y) {
     glRasterPos2d(x,y);
     for (int i=0;i<strlen(str);i++)
@@ -271,13 +273,88 @@ void results()
     glColor3f(0,0,0);//background
     background.drawSquare();
     char str[2];
+    string strz;
+    int indx=0;
     glColor3f(1,1,1);
     sprintf(str,"%d",score);
     printSome("Your Score is: ",centerX-15,centerY+10);
     printSome(str,centerX+5,centerY+10);
-    printSome("Your rank is ",centerX+5,centerY-10);
+    // char line[10];
+    int highscores[100];//store 100 record only
+    // FILE *fscores = fopen("scores.txt","a");
+    // fprintf(fscores,"%d\n",score);
+    // fclose(fscores);
+
+    // int i = 0;
+
+    // fscores = fopen("scores.txt","r");
+    // while(~fscanf(fscores,"%d","scores.txt"+i++));
+    // fclose(fscores);
+
+    // int scoreSize = i-1;
+
+    // std::sort(highscores, highscores+scoreSize);
+
+    // int rank = upper_bound(highscores, arrScores+scoreSize, score) - arrScores;
+    // rank = scoreSize - Rank + 1;
+    // printf
+    // if(ifstream("scores.txt"))
+    // {
+    //     //File exists , we need to get the ranking
+    bool scoreflag=true;
+        if(scores.is_open())
+        {
+            while (getline(scores,strz)){
+                highscores[indx]=stoi(strz);
+                // strcpy(line[i],str.c_str());
+                // printSome(line[i],centerX,centerY+10-i*10);
+                indx++;
+        }
+        scores.close();
+        printf("%d\n",indx);
+        int rank;
+        for (int i = 0; i < indx; ++i) 
+        {
+            for (int j = i + 1; j < indx; ++j)
+            {
+                if (highscores[i] > highscores[j]) 
+                {
+                    if(score<highscores[i])
+                    {
+                        rank=i+1;
+                        scoreflag=false;
+                    }
+                    int temp =  highscores[i];
+                    highscores[i] = highscores[j];
+                    highscores[j] = temp;
+ 
+                }
+            }
+        }
+        if(scoreflag)
+        {
+            rank=indx;
+        }
+        sprintf(str,"%d",rank);
+        printSome("Your Rank is : ",centerX-15,centerY-10);
+        printSome(str,centerX+5,centerY-10);
+        //write to the file
+        ofstream s;
+        s.open("scores.txt",std::ios_base::app);
+        s<<endl;
+        s<<score;
+        scores.close();
+    //     // int rank = upper_bound(highscores,highscores+i-1,score) - highscores;
+    //     printf("n=%d,rank=%d\n",rank);
+    // }
+    // else
+    // {
+    //     printSome("Your rank is 1",centerX-15,centerY-10); //this is the first score record , we write normally without ranking
+    // }
 }
-void highScores(){
+}
+void highScores()
+{
     int s[10];
     char line[10];
     int highscores[5];
@@ -286,7 +363,6 @@ void highScores(){
     glColor3f(0,0,0);
     background.drawSquare();
     glColor3f(1,1,1);
-    ifstream scores("scores.txt");
     if(scores.is_open()){
         while (getline(scores,str)){
             highscores[i]=stoi(str);
@@ -299,9 +375,9 @@ void highScores(){
         scores.close();
     }
     else
-    cout<<"error to open";
+        cout<<"error to open";
     scores.close();
-    sort(highscores,highscores + sizeof(highscores)/sizeof(highscores[0]),greater<int>());
+    std::sort(highscores,highscores + sizeof(highscores)/sizeof(highscores[0]),greater<int>());
     for(int i=0;i<5;i++)
     {
         sprintf(line,"%d.%d",i+1,highscores[i]);
@@ -309,9 +385,9 @@ void highScores(){
     }
 }
 char ans[10];
-void reset()
+void reset(int fl)
 {
-    flag=0;
+    flag=fl;
     Sleep(2500);
     mouseX=0;
     mouseY=0;
@@ -331,15 +407,20 @@ void specialKeyboard(int key,int x,int y)
 {
     if(key == GLUT_KEY_F1 && flag == 1 )//reset game
     {
-        reset();
+        reset(0);
         flag=1;
         glutPostRedisplay();
     }
-    else if (key == GLUT_KEY_F2 && (flag == 1 || flag == 2 || flag ==3))//menu
+    else if (key == GLUT_KEY_F2 && (flag == 1 || flag == 2))//menu
     {
         flag=0;
         glutPostRedisplay();
         // Sleep(2500);
+    }
+    else if (key == GLUT_KEY_F2 && flag == 3)
+    {
+        reset(0);
+        glutPostRedisplay();
     }
 }
 void keyboard(unsigned char key,int x,int y){
@@ -380,7 +461,6 @@ void keyboard(unsigned char key,int x,int y){
     }
 }
 
-
 void mouseClick(int btn, int state, int x, int y){
     mouseX = x;
     mouseX=0.5+1.0*mouseX*logWidth/PhyWidth;
@@ -419,7 +499,7 @@ void passiveMouse(int x,int y){
     mouseY=0.5+1.0*mouseY*logHeight/PhyHeight;
     if(birdBox.checkRange(mouseX,mouseY))// dead for now
     {
-        printf("SCREAM");
+        // printf("SCREAM");
         //glColor3f(1,1,1);
     }
 }
@@ -457,9 +537,8 @@ void playGame()
         birdBox.alphaX+=4;
         glEnd();
     }
-    if(gameTimer > 60 + birdTime)
+    if(gameTimer > 25 + birdTime)
     {
-        reset();
         flag=3;
         glutPostRedisplay();
     }
