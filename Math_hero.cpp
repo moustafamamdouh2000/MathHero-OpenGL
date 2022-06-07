@@ -272,6 +272,7 @@ void powerUpTimer(int value){
         return ;//do nothing
     }
 }
+bool writeFlag=false;
 void results()
 {
     int highscores[100];
@@ -285,9 +286,13 @@ void results()
     sprintf(str,"%d",score);
     printSome("Your Score is: ",centerX-15,centerY+10);
     printSome(str,centerX+5,centerY+10);
-    fp=fopen("scores.txt","a");
-    fprintf(fp,"%d\n",score);
-    fclose(fp);
+    if(writeFlag)
+    {
+        fp=fopen("scores.txt","a");
+        fprintf(fp,"%d\n",score);
+        fclose(fp);
+        writeFlag=false;
+    }
     fp=fopen("scores.txt","r");
     while(~fscanf(fp,"%d",highscores+i++));
     fclose(fp);
@@ -298,6 +303,7 @@ void results()
     printSome("Your Rank is : ",centerX-15,centerY-10);
     printSome(str,centerX+5,centerY-10);
 }
+
 void highScores()
 {
     int s[10];
@@ -319,7 +325,9 @@ void highScores()
         while(~fscanf(fp,"%d",highscores+i++));
         fclose(fp);
         sort(highscores,highscores+i-1,greater<int>());
-        for(int j=0;j<i;j++)
+        if(i>5)
+            i=5;//5 results only
+        for(int j=0;j<i-1;j++)
         {
             sprintf(line,"%d.%d",j+1,highscores[j]);
             printSome(line,centerX-10,centerY+25-j*10);
@@ -482,6 +490,7 @@ void playGame()
     if(gameTimer > 25 + birdTime)
     {
         flag=3;
+        writeFlag=true;
         glutPostRedisplay();
     }
 }
