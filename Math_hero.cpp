@@ -15,6 +15,7 @@
 #include<time.h>
 #include <unistd.h>
 #include <bits/stdc++.h>
+#include <algorithm>
 using namespace std;
 int PhyWidth = 700, PhyHeight = 700;
 int logWidth = 100, logHeight = 100;
@@ -31,6 +32,9 @@ int flag=0;         //menu 0 , play 1
 int gameTimer=0;
 bool birdShown=false;
 int birdTime=0;
+char ans[10];
+char sc[10];
+FILE *fp;
 //TODO : Fix file issue where restarting the game inside doesn't write the new score or display the ranking in the result menu, and creating file
 ifstream scores("scores.txt");
 void printSome(const char *str,int x,int y) {
@@ -270,88 +274,29 @@ void powerUpTimer(int value){
 }
 void results()
 {
-    glColor3f(0,0,0);//background
-    background.drawSquare();
+    int highscores[100];
+    int rank;
     char str[2];
     string strz;
-    int indx=0;
+    int i=0;
+    glColor3f(0,0,0);//background
+    background.drawSquare();
     glColor3f(1,1,1);
     sprintf(str,"%d",score);
     printSome("Your Score is: ",centerX-15,centerY+10);
     printSome(str,centerX+5,centerY+10);
-    // char line[10];
-    int highscores[100];//store 100 record only
-    // FILE *fscores = fopen("scores.txt","a");
-    // fprintf(fscores,"%d\n",score);
-    // fclose(fscores);
-
-    // int i = 0;
-
-    // fscores = fopen("scores.txt","r");
-    // while(~fscanf(fscores,"%d","scores.txt"+i++));
-    // fclose(fscores);
-
-    // int scoreSize = i-1;
-
-    // std::sort(highscores, highscores+scoreSize);
-
-    // int rank = upper_bound(highscores, arrScores+scoreSize, score) - arrScores;
-    // rank = scoreSize - Rank + 1;
-    // printf
-    // if(ifstream("scores.txt"))
-    // {
-    //     //File exists , we need to get the ranking
-    bool scoreflag=true;
-        if(scores.is_open())
-        {
-            while (getline(scores,strz)){
-                highscores[indx]=stoi(strz);
-                // strcpy(line[i],str.c_str());
-                // printSome(line[i],centerX,centerY+10-i*10);
-                indx++;
-        }
-        scores.close();
-        printf("%d\n",indx);
-        int rank;
-        for (int i = 0; i < indx; ++i) 
-        {
-            for (int j = i + 1; j < indx; ++j)
-            {
-                if (highscores[i] > highscores[j]) 
-                {
-                    if(score<highscores[i])
-                    {
-                        rank=i+1;
-                        scoreflag=false;
-                    }
-                    int temp =  highscores[i];
-                    highscores[i] = highscores[j];
-                    highscores[j] = temp;
- 
-                }
-            }
-        }
-        if(scoreflag)
-        {
-            rank=indx;
-        }
-        sprintf(str,"%d",rank);
-        printSome("Your Rank is : ",centerX-15,centerY-10);
-        printSome(str,centerX+5,centerY-10);
-        //write to the file
-        ofstream s;
-        s.open("scores.txt",std::ios_base::app);
-        s<<endl;
-        s<<score;
-        scores.close();
-    //     // int rank = upper_bound(highscores,highscores+i-1,score) - highscores;
-    //     printf("n=%d,rank=%d\n",rank);
-    // }
-    // else
-    // {
-    //     printSome("Your rank is 1",centerX-15,centerY-10); //this is the first score record , we write normally without ranking
-    // }
-}
+    fp=fopen("scores.txt","a");
+    fprintf(fp,"%d\n",score);
+    fclose(fp);
+    fp=fopen("scores.txt","r");
+    while(~fscanf(fp,"%d",highscores+i++));
+    fclose(fp);
+    sort(highscores,highscores+i-1);
+    rank=upper_bound(highscores,highscores+i-1,score)-highscores;
+    rank=i-rank;
+    sprintf(str,"%d",rank);
+    printSome("Your Rank is : ",centerX-15,centerY-10);
+    printSome(str,centerX+5,centerY-10);
 }
 void highScores()
 {
@@ -363,28 +308,25 @@ void highScores()
     glColor3f(0,0,0);
     background.drawSquare();
     glColor3f(1,1,1);
-    if(scores.is_open()){
-        while (getline(scores,str)){
-            highscores[i]=stoi(str);
-            // strcpy(line[i],str.c_str());
-            // printSome(line[i],centerX,centerY+10-i*10);
-            i++;
-            if(i==5)
-                break;
-        }
-        scores.close();
+    fp=fopen("scores.txt","r");
+    if(fp==NULL)
+    {
+        //file doesn't exist, first time playing
+        printSome("Play some games first , theres are no scores at the moment",centerX-35,centerY);
     }
     else
-        cout<<"error to open";
-    scores.close();
-    std::sort(highscores,highscores + sizeof(highscores)/sizeof(highscores[0]),greater<int>());
-    for(int i=0;i<5;i++)
     {
-        sprintf(line,"%d.%d",i+1,highscores[i]);
-        printSome(line,centerX-10,centerY+25-i*10);
+        while(~fscanf(fp,"%d",highscores+i++));
+        fclose(fp);
+        sort(highscores,highscores+i-1,greater<int>());
+        for(int j=0;j<i;j++)
+        {
+            sprintf(line,"%d.%d",j+1,highscores[j]);
+            printSome(line,centerX-10,centerY+25-j*10);
+        }
     }
 }
-char ans[10];
+
 void reset(int fl)
 {
     flag=fl;
@@ -512,7 +454,7 @@ void init(float Red,float Blue,float Green,float Alpha){
     gluOrtho2D( 0.0, logWidth, 0.0, logHeight);
 }
 
-char sc[10];
+
 
 // square play=square("Play",20,15,centerX,centerY+25); 
 void playGame()
