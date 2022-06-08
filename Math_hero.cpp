@@ -328,6 +328,8 @@ void highScores()
         sort(highscores,highscores+i-1,greater<int>());
         if(i>5)
             i=5;//5 results only
+        if(i<5)
+            i--;
         for(int j=0;j<=i-1;j++)
         {
             sprintf(line,"%d.%d",j+1,highscores[j]);
@@ -494,7 +496,7 @@ void playGame()
         birdBox.alphaX+=4;
         glEnd();
     }
-    if(gameTimer > 25 + birdTime)
+    if(gameTimer > 60 + birdTime)
     {
         flag=3;
         writeFlag=true;
